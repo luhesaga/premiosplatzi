@@ -1,0 +1,84 @@
+from typing import Generic
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse, HttpResponseRedirect
+from django.urls import reverse
+from django.views import generic
+from .models import Choice, Question
+
+# def index(request):
+#     latest_questions_list = Question.objects.all()
+#     return render(request, 'polls/index.html', {
+#         'latest_questions_list': latest_questions_list
+#     })
+
+class IndexView(generic.ListView):
+    template_name = "polls/index.html"
+    context_object_name = "latest_question_list"
+
+    def get_queryset(self):
+        '''Return the last five published questions'''
+        return Question.objects.order_by("-pub_date")[:5]
+
+def prueba(request):
+    return HttpResponse("<h1>Bienvenidos</h1>")
+
+# def detail(request, question_id):
+#     question = get_object_or_404(Question, pk=question_id)
+#     return render(request, 'polls/detail.html', {
+#         'question': question
+#     })
+
+class DetailView(generic.DetailView):
+    model = Question
+    template_name = 'polls/detail.html'
+
+
+# def results(request, question_id):
+#     question = get_object_or_404(Question, pk=question_id)
+#     return render(request, 'polls/results.html', {
+#         'question': question
+#     })
+
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
+
+
+# def vote(request, question_id):
+#     question = get_object_or_404(Question, pk=question_id)
+#     try:
+#         selected_choice = question.choice_set.get(pk=request.POST['choice'])
+#     except (KeyError, Choice.DoesNotExist):
+#         return render(request, 'polls/detail.html', {
+#             'question': question,
+#             'error_message': 'No elegiste una respuesta'
+#         })
+#     else:
+#         selected_choice.votes += 1
+#         selected_choice.save()
+#         return HttpResponseRedirect(reverse('polls:results', kwargs=({'pk': question.id},)))
+
+
+def vote(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    try:
+        selected_choice = question.choice_set.get(pk=request.POST["choice"])
+    
+    except (KeyError, Choice.DoesNotExist):
+        template = 'polls/detail.html'
+        context = {
+            'question': question,
+            'error_message': 'No elegiste una respuesta',
+        }
+        return render(request, template, context)
+    
+    else:
+        selected_choice.votes += 1
+        selected_choice.save()
+        
+        viewname = 'polls:results'
+        context = {
+            'pk': question.id
+        }
+        
+        return HttpResponseRedirect(reverse(viewname, kwargs=context))
